@@ -26,22 +26,25 @@ The `image_tag` must match the tag you will push to ECR in the next step.
 
 1. Initialize Terraform once to create the ECR repository and fetch outputs:
    ```bash
-   terraform -chdir=backend/user-service/ecs-hello init
-   terraform -chdir=backend/user-service/ecs-hello apply -target=aws_ecr_repository.repo -auto-approve
-   terraform -chdir=backend/user-service/ecs-hello output -raw ecr_repository_url
+   terraform -chdir=backend/user-service/terraform init
+   terraform -chdir=backend/user-service/terraform apply -target=aws_ecr_repository.repo -auto-approve
+   terraform -chdir=backend/user-service/terraform output -raw ecr_repository_url
    ```
    Note the repository URL (`<account-id>.dkr.ecr.<region>.amazonaws.com/hello-spring`).
+   273505519511.dkr.ecr.ap-south-1.amazonaws.com/mentalhealth-repo
 
 2. Authenticate Docker to ECR and push your image:
    ```bash
-   export AWS_REGION="ap-south-1"                              # match aws_region
-   export ECR_URL="<repository-url-from-output>"
-   aws ecr get-login-password --region "$AWS_REGION" | \
-     docker login --username AWS --password-stdin "$ECR_URL"
+   export AWS_REGION="ap-south-1"  
+    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text                            # match aws_region
+    ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+     ECR_URL = $ECR_REGISTRY/mentalhealth-repo
+   
+   aws ecr get-login-password --region "$AWS_REGION" |  docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
    docker build -t user-service .                               # run from service root directory
    docker tag user-service:"${IMAGE_TAG:-v1}" "$ECR_URL:${IMAGE_TAG:-v1}"
-   docker push "$ECR_URL:${IMAGE_TAG:-v1}"
+   docker push "$ECR_URL:${IMAGE_TAG:-v1}" or docker push $ECR_URL:latest
    ```
    Ensure that the tag (`IMAGE_TAG`/`image_tag`) matches the value configured in `terraform.tfvars`.
 
@@ -50,13 +53,14 @@ The `image_tag` must match the tag you will push to ECR in the next step.
 With the image pushed, apply the full Terraform stack:
 
 ```bash
-terraform -chdir=backend/user-service/ecs-hello apply
+aws sts get-caller-identify --profile demo-tf
+terraform -chdir=backend/user-service/terraform apply
 ```
 
 On success, Terraform prints outputs such as `alb_dns_name`. Open `http://<alb_dns_name>` in a browser or curl it to verify the service is reachable:
 
 ```bash
-ALB_URL=$(terraform -chdir=backend/user-service/ecs-hello output -raw alb_dns_name)
+ALB_URL=$(terraform -chdir=backend/user-service/terraform output -raw alb_dns_name)
 curl "http://$ALB_URL"
 ```
 
@@ -73,7 +77,7 @@ To ship a new version:
 When you are finished, remove all infrastructure:
 
 ```bash
-terraform -chdir=backend/user-service/ecs-hello destroy
+terraform -chdir=backend/user-service/terraform destroy
 ```
 
 The ECR repository is created with `force_delete = true`, so `terraform destroy` succeeds even if images remain.
