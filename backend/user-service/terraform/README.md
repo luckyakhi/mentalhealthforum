@@ -36,15 +36,15 @@ The `image_tag` must match the tag you will push to ECR in the next step.
 2. Authenticate Docker to ECR and push your image:
    ```bash
    export AWS_REGION="ap-south-1"  
-    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text                            # match aws_region
+    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)                            # match aws_region
     ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-     ECR_URL = $ECR_REGISTRY/mentalhealth-repo
+     ECR_URL=$ECR_REGISTRY/mentalhealth-repo
    
    aws ecr get-login-password --region "$AWS_REGION" |  docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
    docker build -t user-service .                               # run from service root directory
-   docker tag user-service:"${IMAGE_TAG:-v1}" "$ECR_URL:${IMAGE_TAG:-v1}"
-   docker push "$ECR_URL:${IMAGE_TAG:-v1}" or docker push $ECR_URL:latest
+   docker tag user-service:"v1" "$ECR_URL:v1"
+   docker push "$ECR_URL:${IMAGE_TAG:-v1}" or docker push $ECR_URL:v1
    ```
    Ensure that the tag (`IMAGE_TAG`/`image_tag`) matches the value configured in `terraform.tfvars`.
 
@@ -53,7 +53,7 @@ The `image_tag` must match the tag you will push to ECR in the next step.
 With the image pushed, apply the full Terraform stack:
 
 ```bash
-aws sts get-caller-identify --profile demo-tf
+aws sts get-caller-identity --profile demo-tf
 terraform -chdir=backend/user-service/terraform apply
 ```
 

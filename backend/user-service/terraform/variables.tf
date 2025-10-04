@@ -38,5 +38,5 @@ variable "ecr_repo_name" {
 variable "image_tag" {
   type        = string
   description = "Tag you push to ECR (e.g., v1)"
-  default     = "latest"
+  default     = "v1"
 }
