@@ -13,7 +13,7 @@ public class HelloController {
     @GetMapping("/api/hello")
     // @CrossOrigin is important! It allows our React app (running on a different port)
     // to call this backend endpoint without being blocked by browser security (CORS).
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin(origins = "http://localhost:5173")
     public Message getHelloMessage() {
         return new Message("Hello from the Secure Backend!");
     }
