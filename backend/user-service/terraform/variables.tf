@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "prefix" {
   type        = string
   description = "Name prefix for all resources"
-  default     = "hello-ecs"
+  default     = "mentalhealth"
 }
 
 variable "vpc_cidr" {
@@ -32,7 +32,7 @@ variable "desired_count" {
 
 variable "ecr_repo_name" {
   type        = string
-  default     = "hello-spring"
+  default     = "mentalhealth-repo"
 }
 
 variable "image_tag" {

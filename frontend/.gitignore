@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#Terrform ignore
+.terraform
+.terraform.lock.hcl
+.terraformrc
+backend/user-service/terraform/.terraform
+backend/user-service/terraform/.terraform.lock.hcl
+backend/user-service/terraform/terraform.tfstate
+backend/user-service/terraform/terraform.tfstate.backup

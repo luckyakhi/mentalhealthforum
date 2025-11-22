@@ -1,0 +1,37 @@
+# 1. The Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: mental-health-forum/frontend:1.0.2
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+
+---
+# 2. The Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  # 'LoadBalancer' makes this service reachable from *outside* the cluster
+  # On Docker Desktop, this will expose it on localhost.
+  type: LoadBalancer 
+  selector:
+    app: frontend
+  ports:
+  - port: 80        # The port the LoadBalancer listens on
+    targetPort: 80   # The port on the container

@@ -9,7 +9,7 @@ RUN mvn package -DskipTests
 
 # Stage 2: The Runtime Stage (Now using JDK 21)
 # We update the base image tag to '21-jdk-slim'.
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8080
