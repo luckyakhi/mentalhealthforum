@@ -1,37 +1,26 @@
 // File: frontend/src/App.tsx
 
-import { useState, useEffect } from 'react'; // <-- CORRECTED LINE
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import LandingPage from './pages/LandingPage';
+import ForumsPage from './pages/ForumsPage';
+import TherapyPage from './pages/TherapyPage';
+import HumanTherapyPage from './pages/HumanTherapyPage';
 import './App.css';
 
-type MessageResponse = {
-  text: string;
-};
-
 function App() {
-  const [message, setMessage] = useState<string>("Loading...");
-
-  useEffect(() => {
-    const fetchMessage = async () => {
-      try {
-        const response = await fetch('/api/hello');
-        const data: MessageResponse = await response.json();
-        setMessage(data.text);
-      } catch (error) {
-        setMessage("Failed to fetch message from backend.");
-        console.error("Error fetching data: ", error);
-      }
-    };
-
-    fetchMessage();
-  }, []);
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Mental Health Forum</h1>
-        <p>Message from our backend: <strong>{message}</strong></p>
-      </header>
-    </div>
+    <Router>
+      <div className="app">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/forums" element={<ForumsPage />} />
+          <Route path="/therapy" element={<TherapyPage />} />
+          <Route path="/human-therapy" element={<HumanTherapyPage />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
