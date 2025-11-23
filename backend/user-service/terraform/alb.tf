@@ -128,3 +128,25 @@ resource "aws_lb_listener_rule" "api" {
     }
   }
 }
+
+resource "aws_lb_listener_rule" "redirect_root_to_www" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 50
+
+  action {
+    type = "redirect"
+
+    redirect {
+      host        = "www.anxietyaicure.com"
+      port        = "80"
+      protocol    = "HTTP"
+      status_code = "HTTP_301"
+    }
+  }
+
+  condition {
+    host_header {
+      values = ["anxietyaicure.com"]
+    }
+  }
+}
