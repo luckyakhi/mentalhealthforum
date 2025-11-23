@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: mental-health-forum/frontend:1.0.2
+        image: anxietyaicure/frontend:0.0.1
         imagePullPolicy: Never
         ports:
         - containerPort: 80

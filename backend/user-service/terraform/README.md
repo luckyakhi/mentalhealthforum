@@ -35,7 +35,7 @@ The `image_tag` must match the tag you will push to ECR in the next step.
 
 2. Authenticate Docker to ECR and push your image:
    ```bash
-export AWS_REGION="ap-south-1"  
+AWS_REGION="ap-south-1"  
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)                         
 ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 ECR_URL=$ECR_REGISTRY/mentalhealth-repo

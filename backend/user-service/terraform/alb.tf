@@ -37,6 +37,14 @@ resource "aws_security_group" "service_sg" {
     security_groups = [aws_security_group.alb_sg.id]
   }
 
+  ingress {
+    description     = "From ALB to Frontend"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -66,14 +74,32 @@ resource "aws_lb_target_group" "app" {
   vpc_id      = aws_vpc.this.id
   health_check {
     enabled  = true
-    interval = 20
+    interval = 30
+    timeout  = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    path     = "/api/actuator/health" # Spring Boot health check
+    matcher  = "200-499"
+  }
+  tags = { Name = "${var.prefix}-tg" }
+}
+
+resource "aws_lb_target_group" "frontend" {
+  name        = "${var.prefix}-frontend-tg"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = aws_vpc.this.id
+  health_check {
+    enabled  = true
+    interval = 30
     timeout  = 5
     healthy_threshold   = 2
     unhealthy_threshold = 2
     path     = "/"
-    matcher  = "200-399"
+    matcher  = "200"
   }
-  tags = { Name = "${var.prefix}-tg" }
+  tags = { Name = "${var.prefix}-frontend-tg" }
 }
 
 resource "aws_lb_listener" "http" {
@@ -83,6 +109,22 @@ resource "aws_lb_listener" "http" {
 
   default_action {
     type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
+}
+
+resource "aws_lb_listener_rule" "api" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 100
+
+  action {
+    type             = "forward"
     target_group_arn = aws_lb_target_group.app.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/*"]
+    }
   }
 }

@@ -9,7 +9,7 @@ const Navbar = () => {
     const login = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             try {
-                const response = await fetch('http://localhost:8081/register', {
+                const response = await fetch('/api/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

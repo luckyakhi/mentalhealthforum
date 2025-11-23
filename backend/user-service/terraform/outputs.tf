@@ -1,12 +1,17 @@
+
 output "alb_dns_name" {
-  value       = aws_lb.app.dns_name
-  description = "Open http://<this> to reach your service"
+  value = aws_lb.app.dns_name
 }
 
-output "cluster_name" {
-  value = aws_ecs_cluster.this.name
+output "rds_endpoint" {
+  value = aws_db_instance.default.endpoint
 }
 
-output "service_name" {
-  value = aws_ecs_service.app.name
+output "backend_repo_url" {
+  value = aws_ecr_repository.repo.repository_url
 }
+
+output "frontend_repo_url" {
+  value = aws_ecr_repository.frontend_repo.repository_url
+}
+
