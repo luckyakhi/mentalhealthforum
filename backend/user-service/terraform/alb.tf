@@ -5,9 +5,9 @@ resource "aws_security_group" "alb_sg" {
   vpc_id      = aws_vpc.this.id
 
   ingress {
-    description = "HTTP from anywhere"
-    from_port   = 80
-    to_port     = 80
+    description = "HTTPS from anywhere"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
@@ -102,19 +102,41 @@ resource "aws_lb_target_group" "frontend" {
   tags = { Name = "${var.prefix}-frontend-tg" }
 }
 
+# HTTP Listener - Redirect to HTTPS
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.app.arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.frontend.arn
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
 }
 
+# HTTPS Listener
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate.cert.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
+  
+  depends_on = [aws_acm_certificate_validation.cert]
+}
+
 resource "aws_lb_listener_rule" "api" {
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.https.arn
   priority     = 100
 
   action {
@@ -129,8 +151,9 @@ resource "aws_lb_listener_rule" "api" {
   }
 }
 
-resource "aws_lb_listener_rule" "redirect_root_to_www" {
-  listener_arn = aws_lb_listener.http.arn
+# Redirect root to www (HTTPS)
+resource "aws_lb_listener_rule" "redirect_root_to_www_https" {
+  listener_arn = aws_lb_listener.https.arn
   priority     = 50
 
   action {
@@ -138,8 +161,8 @@ resource "aws_lb_listener_rule" "redirect_root_to_www" {
 
     redirect {
       host        = "www.anxietyaicure.com"
-      port        = "80"
-      protocol    = "HTTP"
+      port        = "443"
+      protocol    = "HTTPS"
       status_code = "HTTP_301"
     }
   }

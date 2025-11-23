@@ -45,3 +45,9 @@ variable "image_tag" {
   description = "Tag you push to ECR (e.g., v1)"
   default     = "v1"
 }
+
+variable "domain_name" {
+  type        = string
+  description = "Domain name for the application"
+  default     = "anxietyaicure.com"
+}
