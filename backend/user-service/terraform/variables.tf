@@ -43,7 +43,13 @@ variable "ecr_repo_name" {
 variable "image_tag" {
   type        = string
   description = "Tag you push to ECR (e.g., v1)"
-  default     = "v1"
+  default     = "v2"
+}
+
+variable "frontend_image_tag" {
+  type        = string
+  description = "Tag for frontend image"
+  default     = "v3"
 }
 
 variable "domain_name" {

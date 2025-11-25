@@ -14,6 +14,14 @@ Navigate to the terraform directory:
 cd backend/user-service/terraform
 ```
 
+
+### Configuration
+Ensure `terraform.tfvars` is updated with the correct image tags:
+```hcl
+image_tag          = "v1" # Backend
+frontend_image_tag = "v3" # Frontend
+```
+
 Initialize and apply Terraform:
 ```bash
 terraform init
@@ -45,6 +53,7 @@ aws ecr get-login-password --region ap-south-1 | docker login --username AWS --p
 ### Backend
 ```bash
 cd ../.. # Go to backend/user-service
+backend_repo_url="273505519511.dkr.ecr.ap-south-1.amazonaws.com/mentalhealth-repo"
 docker build -t anxietyaicure-user-service:v1 .
 docker tag anxietyaicure-user-service:v1 $backend_repo_url:v1
 docker push $backend_repo_url:v1
@@ -53,27 +62,40 @@ docker push $backend_repo_url:v1
 ### Frontend
 ```bash
 cd ../../frontend # Go to frontend
-docker build -t anxietyaicure-frontend:v1 .
-docker tag anxietyaicure-frontend:v1 $frontend_repo_url:v1
-docker push $frontend_repo_url:v1
+docker build -t anxietyaicure-frontend:v3 .
+docker tag anxietyaicure-frontend:v3 $frontend_repo_url:v3
+docker push $frontend_repo_url:v3
 ```
 
 ## 3. Update ECS Services
 Trigger a deployment to pick up the new images:
 
 ```bash
-aws ecs update-service --cluster anxietyaicure-ecs-cluster --service anxietyaicure-ecs-svc --force-new-deployment
-aws ecs update-service --cluster anxietyaicure-ecs-cluster --service anxietyaicure-ecs-frontend-svc --force-new-deployment
+aws ecs update-service --cluster mentalhealth-ecs-cluster --service mentalhealth-ecs-svc --force-new-deployment
+aws ecs update-service --cluster mentalhealth-ecs-cluster --service mentalhealth-ecs-frontend-svc --force-new-deployment
 ```
 
 ## 4. DNS Configuration (Optional)
-Create a CNAME record in your DNS provider pointing `anxietyaicure.com` to the `alb_dns_name`.
+Run the following to create an Alias record for `www.anxietyaicure.com`:
+```bash
+aws route53 change-resource-record-sets --hosted-zone-id <HOSTED_ZONE_ID> --change-batch file://change-batch.json
+```
+*Note: Ensure `change-batch.json` is configured with your ALB DNS name.*
 
 ## 5. Verification
 Visit `http://<alb_dns_name>` or your custom domain.
 
 ## 6. Cleanup
 To destroy all resources and avoid charges:
+
+### 1. Delete DNS Record
+Manually delete the Route53 Alias record (Terraform does not manage this):
+```bash
+# Use the same change-batch.json but change Action to DELETE
+aws route53 change-resource-record-sets --hosted-zone-id <HOSTED_ZONE_ID> --change-batch file://delete-batch.json
+```
+
+### 2. Destroy Infrastructure
 ```bash
 cd backend/user-service/terraform
 terraform destroy -auto-approve
