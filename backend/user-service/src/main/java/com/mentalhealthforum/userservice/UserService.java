@@ -13,10 +13,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final GoogleTokenVerifier googleTokenVerifier;
+    private final GoogleUserInfoClient googleUserInfoClient;
 
-    public UserService(UserRepository userRepository, GoogleTokenVerifier googleTokenVerifier) {
+    public UserService(UserRepository userRepository, GoogleTokenVerifier googleTokenVerifier, GoogleUserInfoClient googleUserInfoClient) {
         this.userRepository = userRepository;
         this.googleTokenVerifier = googleTokenVerifier;
+        this.googleUserInfoClient = googleUserInfoClient;
     }
 
     @Transactional
@@ -34,19 +36,7 @@ public class UserService {
     @Transactional
     public User registerUserWithAccessToken(String accessToken) throws IOException {
         // Verify access token by calling Google's userinfo endpoint
-        com.google.api.client.http.HttpRequestFactory requestFactory = new com.google.api.client.http.javanet.NetHttpTransport()
-                .createRequestFactory();
-        com.google.api.client.http.GenericUrl url = new com.google.api.client.http.GenericUrl(
-                "https://www.googleapis.com/oauth2/v3/userinfo");
-        com.google.api.client.http.HttpRequest request = requestFactory.buildGetRequest(url);
-        request.getHeaders().setAuthorization("Bearer " + accessToken);
-
-        com.google.api.client.http.HttpResponse response = request.execute();
-        com.google.api.client.json.gson.GsonFactory gsonFactory = new com.google.api.client.json.gson.GsonFactory();
-        com.google.api.client.json.JsonParser parser = gsonFactory.createJsonParser(response.getContent());
-
-        // Parse response
-        java.util.Map<String, Object> userInfo = parser.parse(java.util.Map.class);
+        java.util.Map<String, Object> userInfo = googleUserInfoClient.getUserInfo(accessToken);
 
         String googleId = (String) userInfo.get("sub");
         String email = (String) userInfo.get("email");
