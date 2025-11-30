@@ -15,3 +15,6 @@ output "frontend_repo_url" {
   value = aws_ecr_repository.frontend_repo.repository_url
 }
 
+output "bastion_public_ip" {
+  value = aws_instance.bastion.public_ip
+}
