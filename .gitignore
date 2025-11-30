@@ -3,6 +3,8 @@
 .vscode/
 *.iml
 
+localfiles/
+
 # Maven/Java
 target/
 *.jar
@@ -25,3 +27,9 @@ yarn-error.log*
 # OS generated files
 .DS_Store
 Thumbs.db
+
+#Terraform files
+backend/user-service/terraform/.terraform/
+backend/user-service/terraform/.terraform.lock.hcl
+backend/user-service/terraform/terraform.tfstate
+backend/user-service/terraform/terraform.tfstate.backup

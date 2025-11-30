@@ -35,4 +35,19 @@ else
     echo "Failed to stop RDS instance $DB_INSTANCE_IDENTIFIER (it might already be stopped or in a state that cannot be stopped)."
 fi
 
+# Stop Bastion Host
+BASTION_INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=mentalhealth-ecs-bastion" "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].InstanceId" --output text --region $REGION)
+
+if [ ! -z "$BASTION_INSTANCE_ID" ]; then
+    echo "Stopping Bastion Host: $BASTION_INSTANCE_ID..."
+    aws ec2 stop-instances --instance-ids $BASTION_INSTANCE_ID --region $REGION
+    if [ $? -eq 0 ]; then
+        echo "Successfully requested stop for Bastion Host."
+    else
+        echo "Failed to stop Bastion Host."
+    fi
+else
+    echo "Bastion Host not found or already stopped."
+fi
+
 echo "Stop script completed."

@@ -9,6 +9,21 @@ REGION="ap-south-1"
 
 echo "Starting services in region $REGION..."
 
+# Start Bastion Host
+BASTION_INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=mentalhealth-ecs-bastion" "Name=instance-state-name,Values=stopped" --query "Reservations[].Instances[].InstanceId" --output text --region $REGION)
+
+if [ ! -z "$BASTION_INSTANCE_ID" ]; then
+    echo "Starting Bastion Host: $BASTION_INSTANCE_ID..."
+    aws ec2 start-instances --instance-ids $BASTION_INSTANCE_ID --region $REGION
+    if [ $? -eq 0 ]; then
+        echo "Successfully requested start for Bastion Host."
+    else
+        echo "Failed to start Bastion Host."
+    fi
+else
+    echo "Bastion Host not found or already running."
+fi
+
 # Start RDS Instance
 echo "Starting RDS instance: $DB_INSTANCE_IDENTIFIER..."
 aws rds start-db-instance --db-instance-identifier $DB_INSTANCE_IDENTIFIER --region $REGION

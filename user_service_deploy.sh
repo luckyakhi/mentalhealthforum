@@ -5,7 +5,7 @@ REGION="ap-south-1"
 CLUSTER_NAME="mentalhealth-ecs-cluster"
 SERVICE_NAME="mentalhealth-ecs-svc"
 ECR_REPO_URL="273505519511.dkr.ecr.ap-south-1.amazonaws.com/mentalhealth-repo"
-IMAGE_TAG="v1"
+IMAGE_TAG="v4"
 
 echo "Starting deployment for User Service..."
 
