@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # Isolated Database for Identity (User PII, Auth)
+  postgres-identity:
+    image: postgres:15-alpine
+    container_name: mhf-postgres-identity
+    environment:
+      POSTGRES_DB: identity_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - identity-pgdata:/var/lib/postgresql/data
+    networks:
+      - forum-net
+
+  # Isolated Database for Forum (Threads, Posts - NO PII)
+  postgres-forum:
+    image: postgres:15-alpine
+    container_name: mhf-postgres-forum
+    environment:
+      POSTGRES_DB: forum_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"  # Port mapped to 5433 to avoid conflict
+    volumes:
+      - forum-pgdata:/var/lib/postgresql/data
+    networks:
+      - forum-net
+
+  # Redis for Session Management and potentially Caching/Messaging
+  redis:
+    image: redis:7-alpine
+    container_name: mhf-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - forum-net
+
+  # Placeholder: In a real setup, we might run the gateway here too
+  # forum-gateway:
+  #   build: ./forum-api-gateway
+  #   ports:
+  #     - "8080:8080"
+  #   networks:
+  #     - forum-net
+
+networks:
+  forum-net:
+    driver: bridge
+
+volumes:
+  identity-pgdata:
+  forum-pgdata:

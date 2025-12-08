@@ -1,0 +1,63 @@
+C4Container
+    title Container Diagram - Mental Health Support & Teletherapy Platform
+
+    %% Actors
+    Person(member, "Member", "A user seeking mental health support (Anonymous in Forum, Authenticated in Therapy)")
+    Person(provider, "Therapist", "Licensed professional providing video consultations")
+
+    %% External Systems
+    System_Ext(idp, "Identity Provider", "Auth0 / AWS Cognito. Handles OIDC/OAuth2 authentication.")
+    System_Ext(llm_provider, "LLM Provider", "OpenAI / Anthropic. Provides generative text for AI Companion.")
+    System_Ext(video_platform, "Video SDK", "Twilio / Zoom. Handles WebRTC video streaming.")
+    System_Ext(emergency_api, "Emergency Services", "External API for crisis escalation triggers.")
+
+    %% System Boundary
+    System_Boundary(system_boundary, "Mental Health Platform") {
+
+        %% Frontend
+        Container(spa, "Single Page App", "React / TypeScript", "The unified interface for Members and Providers.")
+        
+        %% API Gateway
+        Container(api_gateway, "API Gateway", "Spring Cloud Gateway / NGINX", "Entry point, SSL termination, Rate limiting, Routing.")
+
+        %% Microservices (Containers)
+        Container(auth_svc, "Identity Service", "Spring Boot", "Manages user profiles and maps IAM tokens to internal IDs.")
+        Container(care_svc, "Care Delivery Service", "Spring Boot", "Manages appointments, session notes, and provider availability.")
+        Container(forum_svc, "Community Service", "Spring Boot", "Manages threads, comments, and moderation queues.")
+        Container(ai_svc, "AI Companion Service", "Python / FastAPI", "Orchestrates chat flow, RAG context, and Crisis Detection.")
+
+        %% Data Layer (Polyglot Persistence)
+        ContainerDb(auth_db, "Identity DB", "PostgreSQL", "Stores PII, Credentials, Roles.")
+        ContainerDb(care_db, "Clinical DB", "PostgreSQL (Encrypted)", "Stores appointments, medical notes. Strict Access Control.")
+        ContainerDb(forum_db, "Forum DB", "MongoDB", "Stores hierarchical threads and unstructured posts.")
+        ContainerDb(vector_db, "Vector Store", "Pinecone / Milvus", "Stores embeddings of conversation history and resources for RAG.")
+    }
+
+    %% Relationships
+    Rel(member, spa, "View/Interact", "HTTPS")
+    Rel(provider, spa, "Manage Schedule", "HTTPS")
+
+    Rel(spa, api_gateway, "API Calls", "JSON/HTTPS")
+
+    %% Gateway Routing
+    Rel(api_gateway, auth_svc, "Routes /auth")
+    Rel(api_gateway, care_svc, "Routes /care")
+    Rel(api_gateway, forum_svc, "Routes /community")
+    Rel(api_gateway, ai_svc, "Routes /ai")
+
+    %% Service Logic
+    Rel(auth_svc, idp, "Validates Tokens", "OIDC")
+    Rel(auth_svc, auth_db, "Read/Write User Data", "JDBC")
+
+    Rel(care_svc, care_db, "Persists Clinical Data", "JDBC")
+    Rel(care_svc, video_platform, "Generates Room Tokens", "REST")
+
+    Rel(forum_svc, forum_db, "Persists Threads", "Mongo Driver")
+    
+    %% AI & Crisis Flow
+    Rel(ai_svc, llm_provider, "Inference Request", "REST")
+    Rel(ai_svc, vector_db, "Retrieve Context", "gRPC")
+    Rel(ai_svc, emergency_api, "Escalates High Risk", "REST/Webhook")
+    
+    %% Cross-Service Communication (Event Driven preferred, direct shown for clarity)
+    Rel(care_svc, auth_svc, "Verifies Provider License")

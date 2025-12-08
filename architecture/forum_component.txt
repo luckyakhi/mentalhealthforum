@@ -1,0 +1,28 @@
+C4Component
+    title Component Diagram - Forum Service (Spring Boot)
+
+    Container_Boundary(forum_svc, "Forum Service Scope") {
+        Component(controller, "Forum Controller", "Spring MVC", "Exposes REST endpoints for Threads/Comments.")
+        
+        Component(alias_mgr, "Alias Manager", "Service", "Generates/Retrieves random user aliases (e.g., 'Resilient-Panda'). Ensures real PII never enters the Forum DB.")
+        
+        Component(thread_logic, "Thread Service", "Service", "Handles CRUD, pinning, locking, and basic retrieval logic.")
+        
+        Component(mod_engine, "Moderation Engine", "Service + Strategy Pattern", "Orchestrates text analysis. Decides if content is Auto-Approved, Rejected, or Flagged.")
+
+        Component(event_pub, "Event Publisher", "Kafka/RabbitMQ Producer", "Publishes 'PostCreated' events for async analysis.")
+        
+        Component(repo, "Forum Repository", "Spring Data MongoDB", "Data access layer.")
+    }
+
+    System_Ext(nlp_svc, "Text Analysis API", "AWS Comprehend / Custom Model", "Detects PII, Toxicity, and Sentiment.")
+    
+    ContainerDb(mongo, "Forum DB", "MongoDB", "Stores Threads, Posts, and Moderation Logs.")
+
+    Rel(controller, alias_mgr, "1. Resolve Identity to Alias")
+    Rel(controller, thread_logic, "2. Create Post")
+    Rel(thread_logic, mod_engine, "3. Validate Content")
+    Rel(mod_engine, nlp_svc, "4. Check Toxicity/PII")
+    Rel(mod_engine, event_pub, "5. Publish Audit Events")
+    Rel(thread_logic, repo, "6. Persist")
+    Rel(repo, mongo, "Reads/Writes")
