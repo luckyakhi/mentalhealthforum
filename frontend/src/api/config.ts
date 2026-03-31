@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const USER_SERVICE_URL = process.env.REACT_APP_USER_SERVICE_URL || 'http://localhost:30081';
-const FORUM_SERVICE_URL = process.env.REACT_APP_FORUM_SERVICE_URL || 'http://localhost:30082';
+const USER_SERVICE_URL = import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:30081';
+const FORUM_SERVICE_URL = import.meta.env.VITE_FORUM_SERVICE_URL || 'http://localhost:30082';
 
 export const userServiceApi = axios.create({
   baseURL: USER_SERVICE_URL,

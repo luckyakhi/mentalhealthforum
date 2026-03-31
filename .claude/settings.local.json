@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(pkill:*)",
+      "Bash(find:*)",
+      "Bash(docker ps:*)",
+      "Bash(BASE=\"/c/Users/akhii/home/code/mentalhealthforum/.claude/worktrees/stoic-mahavira/backend/forum-service\")",
+      "Bash(mkdir -p \"$BASE/src/main/java/com/mentalhealthforum/forumservice/domain/model\")",
+      "Bash(mkdir -p \"$BASE/src/main/java/com/mentalhealthforum/forumservice/domain/repository\")",
+      "Bash(mkdir -p \"$BASE/src/main/java/com/mentalhealthforum/forumservice/application/service\")",
+      "Bash(mkdir -p \"$BASE/src/main/java/com/mentalhealthforum/forumservice/application/dto\")",
+      "Bash(docker info:*)",
+      "Bash(kubectl cluster-info:*)",
+      "Bash(kubectl get:*)",
+      "Bash(docker build:*)",
+      "Bash(kubectl apply:*)",
+      "Bash(kubectl wait:*)",
+      "Bash(gh pr:*)",
+      "Bash(where gh:*)",
+      "Bash(winget list:*)",
+      "Bash(terraform init:*)",
+      "Bash(terraform validate:*)",
+      "Bash(\"C:/Users/akhii/home/code/mentalhealthforum/.claude/worktrees/stoic-mahavira/frontend/package.json\":*)",
+      "Bash(\"C:/Users/akhii/home/code/mentalhealthforum/.claude/worktrees/stoic-mahavira/frontend/index.html\":*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''resources:'''', len\\(d.get\\(''''resources'''', []\\)\\)\\); [print\\('''' -'''', r[''''type''''], r.get\\(''''name'''',''''''''\\)\\) for r in d.get\\(''''resources'''',[]\\)]\")"
+    ]
+  }
+}

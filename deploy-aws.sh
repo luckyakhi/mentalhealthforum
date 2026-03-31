@@ -92,8 +92,8 @@ echo ""
 echo "  Building frontend (with production API URLs)..."
 cd "$SCRIPT_DIR/frontend"
 docker build \
-  --build-arg "REACT_APP_USER_SERVICE_URL=$USER_SERVICE_URL" \
-  --build-arg "REACT_APP_FORUM_SERVICE_URL=$FORUM_SERVICE_URL" \
+  --build-arg "VITE_USER_SERVICE_URL=$USER_SERVICE_URL" \
+  --build-arg "VITE_FORUM_SERVICE_URL=$FORUM_SERVICE_URL" \
   -t "mental-health-forum/frontend:$IMAGE_TAG" .
 docker tag "mental-health-forum/frontend:$IMAGE_TAG" "$ECR_FRONTEND:$IMAGE_TAG"
 docker push "$ECR_FRONTEND:$IMAGE_TAG"

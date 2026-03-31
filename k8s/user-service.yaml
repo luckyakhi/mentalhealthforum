@@ -1,0 +1,38 @@
+# 1. The Deployment: "How to run the container"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service-deployment
+spec:
+  replicas: 1 # Run one instance
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: mental-health-forum/user-service:0.0.2
+        # 'imagePullPolicy: Never' tells K8s to use the local image
+        # you already built with 'docker build', not pull from the internet.
+        imagePullPolicy: Never 
+        ports:
+        - containerPort: 8080
+
+---
+# 2. The Service: "How to network and expose the container"
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  # 'ClusterIP' makes this service reachable *inside* the cluster
+  type: ClusterIP
+  selector:
+    app: user-service # This matches the 'app' label in the Deployment
+  ports:
+  - port: 8080       # The port other pods will use to talk to this service
+    targetPort: 8080 # The port on the container
