@@ -1,37 +1,42 @@
-// File: frontend/src/App.tsx
-
-import { useState, useEffect } from 'react'; // <-- CORRECTED LINE
-import './App.css';
-
-type MessageResponse = {
-  text: string;
-};
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import CategoryPage from './pages/CategoryPage';
+import ThreadDetailPage from './pages/ThreadDetailPage';
+import CreateThreadPage from './pages/CreateThreadPage';
+import UserProfilePage from './pages/UserProfilePage';
+import SearchPage from './pages/SearchPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
-  const [message, setMessage] = useState<string>("Loading...");
-
-  useEffect(() => {
-    const fetchMessage = async () => {
-      try {
-        const response = await fetch('/api/hello');
-        const data: MessageResponse = await response.json();
-        setMessage(data.text);
-      } catch (error) {
-        setMessage("Failed to fetch message from backend.");
-        console.error("Error fetching data: ", error);
-      }
-    };
-
-    fetchMessage();
-  }, []);
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Mental Health Forum</h1>
-        <p>Message from our backend: <strong>{message}</strong></p>
-      </header>
-    </div>
+    <AuthProvider>
+      <BrowserRouter>
+        <Navbar />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/category/:id" element={<CategoryPage />} />
+            <Route path="/thread/create" element={
+              <ProtectedRoute>
+                <CreateThreadPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/thread/:id" element={<ThreadDetailPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/profile/:userId" element={<UserProfilePage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </main>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

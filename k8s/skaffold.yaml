@@ -1,0 +1,34 @@
+apiVersion: skaffold/v4beta9
+kind: Config
+metadata:
+  name: mental-health-forum
+build:
+  artifacts:
+  - image: mental-health-forum/user-service
+    context: ../backend/user-service
+    docker:
+      dockerfile: Dockerfile
+  - image: mental-health-forum/forum-service
+    context: ../backend/forum-service
+    docker:
+      dockerfile: Dockerfile
+  - image: mental-health-forum/frontend
+    context: ../frontend
+    docker:
+      dockerfile: Dockerfile
+    buildArgs:
+      REACT_APP_USER_SERVICE_URL: http://localhost:30081
+      REACT_APP_FORUM_SERVICE_URL: http://localhost:30082
+  local:
+    push: false
+deploy:
+  kubectl:
+    manifests:
+    - k8s/namespace.yaml
+    - k8s/secrets.yaml
+    - k8s/configmaps.yaml
+    - k8s/user-db/*.yaml
+    - k8s/forum-db/*.yaml
+    - k8s/user-service/*.yaml
+    - k8s/forum-service/*.yaml
+    - k8s/frontend/*.yaml

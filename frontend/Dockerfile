@@ -1,28 +1,18 @@
-# Stage 1: The Build Stage
-# Using a slim image which is compatible and includes necessary build tools.
+# Stage 1: Build
 FROM node:24-slim AS builder
 WORKDIR /app
-
-# Install dependencies
 COPY package*.json ./
 RUN npm install
-
-# Copy source and build the app
 COPY . .
+ARG VITE_USER_SERVICE_URL=http://localhost:30081
+ARG VITE_FORUM_SERVICE_URL=http://localhost:30082
+ENV VITE_USER_SERVICE_URL=$VITE_USER_SERVICE_URL
+ENV VITE_FORUM_SERVICE_URL=$VITE_FORUM_SERVICE_URL
 RUN npm run build
 
-# Stage 2: The Serve Stage
-# Nginx is a lightweight server for our static files.
+# Stage 2: Serve
 FROM nginx:stable-alpine
-
-# Copy the build output from the builder stage.
-# Vite builds to a 'dist' folder, not 'build'.
 COPY --from=builder /app/dist /usr/share/nginx/html
-
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expose port 80
 EXPOSE 80
-
-# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]

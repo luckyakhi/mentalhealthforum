@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: forum-db
+  namespace: mental-health-forum
+spec:
+  selector:
+    matchLabels:
+      app: forum-db
+  serviceName: "forum-db-service"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: forum-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "forumdb"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: mhf-secrets
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mhf-secrets
+              key: forum-db-password
+        volumeMounts:
+        - name: forum-db-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: forum-db-data
+        persistentVolumeClaim:
+          claimName: forum-db-pvc

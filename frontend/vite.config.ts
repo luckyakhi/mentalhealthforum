@@ -5,12 +5,13 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 3000,
     proxy: {
+      // Dev-time proxy: forward /api calls to user-service
+      // In production, API URLs are baked in at build time via VITE_ env vars
       '/api': {
-        // This name 'user-service' resolves to our K8s service
-        target: 'http://user-service:8080',
+        target: 'http://localhost:30081',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },

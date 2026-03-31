@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: forum-service
+  namespace: mental-health-forum
+spec:
+  selector:
+    app: forum-service
+  type: NodePort
+  ports:
+  - port: 8081
+    targetPort: 8081
+    nodePort: 30082
