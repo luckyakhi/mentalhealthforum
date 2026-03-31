@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+  namespace: mental-health-forum
+data:
+  DB_HOST: "user-db-service"
+  DB_PORT: "5432"
+  DB_NAME: "userdb"
+  SPRING_PROFILES_ACTIVE: "prod"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forum-service-config
+  namespace: mental-health-forum
+data:
+  DB_HOST: "forum-db-service"
+  DB_PORT: "5432"
+  DB_NAME: "forumdb"
+  SPRING_PROFILES_ACTIVE: "prod"
