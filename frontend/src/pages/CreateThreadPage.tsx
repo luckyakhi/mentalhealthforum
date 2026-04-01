@@ -1,54 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { getCategories, Category } from '../api/categories';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createThread } from '../api/threads';
-import LoadingSpinner from '../components/LoadingSpinner';
-
-interface LocationState {
-  categoryId?: string;
-}
 
 const CreateThreadPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const locationState = location.state as LocationState | null;
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-
-  const [categoryId, setCategoryId] = useState(locationState?.categoryId || '');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await getCategories();
-        const data = Array.isArray(res.data) ? res.data : [];
-        const sorted = [...data].sort((a, b) => a.displayOrder - b.displayOrder);
-        setCategories(sorted);
-        if (!categoryId && sorted.length > 0) {
-          setCategoryId(sorted[0].id);
-        }
-      } catch {
-        setError('Failed to load categories.');
-      } finally {
-        setLoadingCategories(false);
-      }
-    };
-    fetchCategories();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!categoryId) {
-      setError('Please select a category.');
-      return;
-    }
     if (!title.trim()) {
       setError('Please enter a title.');
       return;
@@ -61,36 +26,29 @@ const CreateThreadPage: React.FC = () => {
       setError('Please enter the thread content.');
       return;
     }
-    if (content.trim().length < 20) {
-      setError('Content must be at least 20 characters.');
+    if (content.trim().length < 10) {
+      setError('Content must be at least 10 characters.');
       return;
     }
 
     setSubmitting(true);
     try {
-      const res = await createThread({
-        categoryId,
-        title: title.trim(),
-        content: content.trim(),
-      });
+      const res = await createThread({ title: title.trim(), content: content.trim() });
       navigate(`/thread/${res.data.id}`);
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      const serverMessage = axiosError?.response?.data?.message;
-      setError(serverMessage || 'Failed to create thread. Please try again.');
+      setError(axiosError?.response?.data?.message || 'Failed to create thread. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loadingCategories) return <LoadingSpinner />;
-
   return (
     <div className="page-container">
       <div className="form-page-card">
-        <h1 className="page-title">Create New Thread</h1>
+        <h1 className="page-title">Start a New Thread</h1>
         <p className="page-description">
-          Share your thoughts, ask for support, or start a discussion.
+          Share your thoughts, ask for support, or start a discussion with the community.
         </p>
 
         {error && (
@@ -99,33 +57,18 @@ const CreateThreadPage: React.FC = () => {
 
         <form className="thread-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="category" className="form-label">Category</label>
-            <select
-              id="category"
-              className="form-select"
-              value={categoryId}
-              onChange={e => setCategoryId(e.target.value)}
-              required
-            >
-              <option value="">Select a category...</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="title" className="form-label">Thread Title</label>
+            <label htmlFor="title" className="form-label">Title</label>
             <input
               id="title"
               type="text"
               className="form-input"
-              placeholder="Enter a descriptive title..."
+              placeholder="Enter a clear, descriptive title..."
               value={title}
               onChange={e => setTitle(e.target.value)}
               required
               minLength={5}
               maxLength={200}
+              autoFocus
             />
             <span className="form-hint">{title.length}/200 characters</span>
           </div>
@@ -135,14 +78,14 @@ const CreateThreadPage: React.FC = () => {
             <textarea
               id="content"
               className="form-textarea"
-              placeholder="Share your thoughts here. This is a safe space..."
+              placeholder="Share your thoughts here. This is a safe space — be kind and respectful..."
               value={content}
               onChange={e => setContent(e.target.value)}
               required
-              minLength={20}
+              minLength={10}
               rows={10}
             />
-            <span className="form-hint">Minimum 20 characters. Be kind and respectful.</span>
+            <span className="form-hint">Minimum 10 characters.</span>
           </div>
 
           <div className="form-actions">
@@ -151,12 +94,12 @@ const CreateThreadPage: React.FC = () => {
               className="btn btn-primary"
               disabled={submitting}
             >
-              {submitting ? 'Creating...' : 'Create Thread'}
+              {submitting ? 'Posting...' : 'Post Thread'}
             </button>
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/')}
             >
               Cancel
             </button>

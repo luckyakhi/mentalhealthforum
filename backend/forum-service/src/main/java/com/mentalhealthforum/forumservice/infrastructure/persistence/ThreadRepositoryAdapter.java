@@ -5,7 +5,9 @@ import com.mentalhealthforum.forumservice.domain.model.ForumThread;
 import com.mentalhealthforum.forumservice.domain.model.ThreadStatus;
 import com.mentalhealthforum.forumservice.domain.repository.ThreadRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -25,6 +27,14 @@ public class ThreadRepositoryAdapter implements ThreadRepository {
         ForumThreadJpaEntity entity = toEntity(thread);
         ForumThreadJpaEntity saved = jpaRepository.save(entity);
         return toDomain(saved);
+    }
+
+    @Override
+    public Page<ForumThread> findAll(Pageable pageable) {
+        PageRequest sorted = PageRequest.of(
+                pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by("createdAt").descending());
+        return jpaRepository.findAll(sorted).map(this::toDomain);
     }
 
     @Override
@@ -63,7 +73,7 @@ public class ThreadRepositoryAdapter implements ThreadRepository {
     private ForumThreadJpaEntity toEntity(ForumThread thread) {
         return ForumThreadJpaEntity.builder()
                 .id(thread.getId().toString())
-                .categoryId(thread.getCategoryId().toString())
+                .categoryId(thread.getCategoryId() != null ? thread.getCategoryId().toString() : null)
                 .title(thread.getTitle())
                 .content(thread.getContent())
                 .authorId(thread.getAuthorId().value())
@@ -78,7 +88,7 @@ public class ThreadRepositoryAdapter implements ThreadRepository {
     private ForumThread toDomain(ForumThreadJpaEntity entity) {
         return ForumThread.reconstitute(
                 UUID.fromString(entity.getId()),
-                UUID.fromString(entity.getCategoryId()),
+                entity.getCategoryId() != null ? UUID.fromString(entity.getCategoryId()) : null,
                 entity.getTitle(),
                 entity.getContent(),
                 new AnonymousAuthorId(entity.getAuthorId()),

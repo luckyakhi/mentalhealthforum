@@ -16,6 +16,8 @@ public interface ThreadRepository {
 
     Optional<ForumThread> findById(UUID id);
 
+    Page<ForumThread> findAll(Pageable pageable);
+
     Page<ForumThread> findByCategoryId(UUID categoryId, Pageable pageable);
 
     Page<ForumThread> search(String keyword, Pageable pageable);

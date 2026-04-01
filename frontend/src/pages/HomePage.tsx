@@ -1,33 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getCategories, Category } from '../api/categories';
+import { Link, useNavigate } from 'react-router-dom';
+import { getAllThreads, ThreadSummary } from '../api/threads';
+import { useAuth } from '../context/AuthContext';
+import ThreadCard from '../components/ThreadCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+const PAGE_SIZE = 20;
+
 const HomePage: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useAuth();
   const navigate = useNavigate();
 
+  const [threads, setThreads] = useState<ThreadSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchThreads = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const response = await getCategories();
-        const data = response.data;
-        const sorted = Array.isArray(data)
-          ? [...data].sort((a, b) => a.displayOrder - b.displayOrder)
-          : [];
-        setCategories(sorted);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Failed to load categories. Please try again later.';
-        setError(message);
+        const res = await getAllThreads(page, PAGE_SIZE);
+        const data = Array.isArray(res.data) ? res.data : [];
+        setThreads(data);
+        setHasMore(data.length === PAGE_SIZE);
+      } catch {
+        setError('Failed to load threads. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
-    fetchCategories();
-  }, []);
+    fetchThreads();
+  }, [page]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +57,7 @@ const HomePage: React.FC = () => {
             <input
               type="text"
               className="hero-search-input"
-              placeholder="Search for topics, threads, or discussions..."
+              placeholder="Search threads..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -61,48 +68,69 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section className="categories-section">
-        <h2 className="section-title">Discussion Categories</h2>
-        <p className="section-subtitle">Choose a topic to explore and join the conversation</p>
+      <section className="forum-section">
+        <div className="forum-section-header">
+          <div>
+            <h2 className="section-title">All Discussions</h2>
+            <p className="section-subtitle">Browse threads from the community</p>
+          </div>
+          {user ? (
+            <Link to="/thread/create" className="btn btn-primary">
+              + New Thread
+            </Link>
+          ) : (
+            <Link to="/login" className="btn btn-secondary">
+              Sign in to post
+            </Link>
+          )}
+        </div>
 
         {loading && <LoadingSpinner />}
 
         {error && (
-          <div className="alert alert-error">
-            <strong>Unable to load categories.</strong> {error}
-          </div>
+          <div className="alert alert-error">{error}</div>
         )}
 
-        {!loading && !error && categories.length === 0 && (
+        {!loading && !error && threads.length === 0 && (
           <div className="empty-state">
-            <p>No categories available yet. Check back soon!</p>
+            <p>No threads yet. Be the first to start a discussion!</p>
+            {user ? (
+              <Link to="/thread/create" className="btn btn-primary">
+                Start a Thread
+              </Link>
+            ) : (
+              <p>
+                <Link to="/login" className="auth-link">Sign in</Link> to create the first thread.
+              </p>
+            )}
           </div>
         )}
 
-        {!loading && !error && categories.length > 0 && (
-          <div className="categories-grid">
-            {categories.map(category => (
-              <div
-                key={category.id}
-                className="category-card"
-                onClick={() => navigate(`/category/${category.id}`)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={e => e.key === 'Enter' && navigate(`/category/${category.id}`)}
-              >
-                <div className="category-card-body">
-                  <h3 className="category-card-title">{category.name}</h3>
-                  <p className="category-card-description">{category.description}</p>
-                </div>
-                <div className="category-card-footer">
-                  <span className="category-thread-count">
-                    <span className="meta-icon">💬</span>
-                    {category.threadCount} {category.threadCount === 1 ? 'thread' : 'threads'}
-                  </span>
-                  <span className="category-arrow">→</span>
-                </div>
-              </div>
+        {!loading && !error && threads.length > 0 && (
+          <div className="threads-list">
+            {threads.map(thread => (
+              <ThreadCard key={thread.id} thread={thread} />
             ))}
+          </div>
+        )}
+
+        {!loading && (page > 0 || hasMore) && (
+          <div className="pagination">
+            <button
+              className="btn btn-secondary"
+              onClick={() => setPage(p => p - 1)}
+              disabled={page === 0}
+            >
+              ← Previous
+            </button>
+            <span className="pagination-info">Page {page + 1}</span>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setPage(p => p + 1)}
+              disabled={!hasMore}
+            >
+              Next →
+            </button>
           </div>
         )}
       </section>

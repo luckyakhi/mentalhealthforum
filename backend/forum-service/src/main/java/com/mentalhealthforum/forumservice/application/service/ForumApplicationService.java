@@ -71,22 +71,36 @@ public class ForumApplicationService {
     // =========================================================================
 
     public ThreadDto createThread(CreateThreadRequest req, String userId, String username) {
-        categoryRepository.findById(req.categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category", req.categoryId()));
+        UUID categoryId = req.categoryId();
+
+        if (categoryId != null) {
+            categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Category", categoryId));
+        }
 
         AnonymousAuthorId authorId = AnonymousAuthorId.from(userId, ANONYMOUS_SALT);
-        ForumThread thread = ForumThread.create(req.categoryId(), req.title(), req.content(),
+        ForumThread thread = ForumThread.create(categoryId, req.title(), req.content(),
                 authorId, username);
         ForumThread saved = threadRepository.save(thread);
 
-        // Increment category thread count
-        categoryRepository.findById(req.categoryId()).ifPresent(cat -> {
-            cat.incrementThreadCount();
-            categoryRepository.save(cat);
-        });
+        if (categoryId != null) {
+            categoryRepository.findById(categoryId).ifPresent(cat -> {
+                cat.incrementThreadCount();
+                categoryRepository.save(cat);
+            });
+        }
 
         long commentCount = commentRepository.countByThreadId(saved.getId());
         return toThreadDto(saved, commentCount);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ThreadSummaryDto> getAllThreads(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ForumThread> threads = threadRepository.findAll(pageable);
+        return threads.getContent().stream()
+                .map(t -> toThreadSummaryDto(t, commentRepository.countByThreadId(t.getId())))
+                .toList();
     }
 
     public ThreadDto getThread(UUID threadId) {
@@ -139,11 +153,12 @@ public class ForumApplicationService {
             verifyThreadOwnership(userId, thread);
         }
 
-        // Decrement category thread count
-        categoryRepository.findById(thread.getCategoryId()).ifPresent(cat -> {
-            cat.decrementThreadCount();
-            categoryRepository.save(cat);
-        });
+        if (thread.getCategoryId() != null) {
+            categoryRepository.findById(thread.getCategoryId()).ifPresent(cat -> {
+                cat.decrementThreadCount();
+                categoryRepository.save(cat);
+            });
+        }
 
         threadRepository.delete(threadId);
     }
