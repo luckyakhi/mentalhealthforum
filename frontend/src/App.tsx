@@ -6,7 +6,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import CategoryPage from './pages/CategoryPage';
 import ThreadDetailPage from './pages/ThreadDetailPage';
 import CreateThreadPage from './pages/CreateThreadPage';
 import UserProfilePage from './pages/UserProfilePage';
@@ -23,7 +22,6 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/category/:id" element={<CategoryPage />} />
             <Route path="/thread/create" element={
               <ProtectedRoute>
                 <CreateThreadPage />

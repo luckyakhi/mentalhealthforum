@@ -25,6 +25,13 @@ public class ThreadController {
         this.forumService = forumService;
     }
 
+    @GetMapping
+    public ResponseEntity<List<ThreadSummaryDto>> getAllThreads(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(forumService.getAllThreads(page, size));
+    }
+
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<ThreadSummaryDto>> getThreadsByCategory(
             @PathVariable UUID categoryId,

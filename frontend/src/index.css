@@ -590,6 +590,31 @@ img {
 }
 
 /* =====================================================
+   FORUM SECTION
+   ===================================================== */
+
+.forum-section {
+  margin-bottom: 3rem;
+}
+
+.forum-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.forum-section-header .section-title {
+  margin-bottom: 0.25rem;
+}
+
+.forum-section-header .section-subtitle {
+  margin-bottom: 0;
+}
+
+/* =====================================================
    THREAD CARDS (list)
    ===================================================== */
 

@@ -107,7 +107,7 @@ const ThreadDetailPage: React.FC = () => {
     if (!thread || !window.confirm('Are you sure you want to delete this thread?')) return;
     try {
       await deleteThread(thread.id);
-      navigate(`/category/${thread.categoryId}`);
+      navigate('/');
     } catch {
       alert('Failed to delete thread.');
     }
@@ -135,8 +135,6 @@ const ThreadDetailPage: React.FC = () => {
     <div className="page-container">
       <div className="breadcrumb">
         <Link to="/" className="breadcrumb-link">Home</Link>
-        <span className="breadcrumb-sep"> / </span>
-        <Link to={`/category/${thread.categoryId}`} className="breadcrumb-link">Category</Link>
         <span className="breadcrumb-sep"> / </span>
         <span>{thread.title}</span>
       </div>

@@ -43,6 +43,9 @@ const Navbar: React.FC = () => {
           <Link to="/" className="navbar-link">Home</Link>
           {user ? (
             <>
+              <Link to="/thread/create" className="btn btn-primary btn-sm">
+                + New Thread
+              </Link>
               <Link to={`/profile/${user.userId}`} className="navbar-link navbar-username">
                 {user.username}
               </Link>

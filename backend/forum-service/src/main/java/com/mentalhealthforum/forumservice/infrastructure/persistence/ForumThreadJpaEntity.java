@@ -20,7 +20,7 @@ public class ForumThreadJpaEntity {
     @Column(name = "id", nullable = false, length = 36)
     private String id;
 
-    @Column(name = "category_id", nullable = false, length = 36)
+    @Column(name = "category_id", nullable = true, length = 36)
     private String categoryId;
 
     @Column(name = "title", nullable = false, length = 200)
