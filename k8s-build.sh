@@ -16,8 +16,8 @@ cd ../..
 echo "Building frontend..."
 cd frontend
 docker build \
-  --build-arg REACT_APP_USER_SERVICE_URL=http://localhost:30081 \
-  --build-arg REACT_APP_FORUM_SERVICE_URL=http://localhost:30082 \
+  --build-arg VITE_USER_SERVICE_URL=http://localhost:30081 \
+  --build-arg VITE_FORUM_SERVICE_URL=http://localhost:30082 \
   -t mental-health-forum/frontend:latest .
 cd ..
 
