@@ -1,0 +1,123 @@
+# ============================================================
+# Mental Health Forum — Local Development Stack
+#
+# Starts:  user-db (postgres:5432), forum-db (postgres:5433)
+#          user-service  → http://localhost:30081
+#          forum-service → http://localhost:30082
+#          frontend      → http://localhost:3000
+#
+# Usage:
+#   docker compose up --build        # first run / after code changes
+#   docker compose up                # subsequent runs (no rebuild)
+#   docker compose down              # stop & remove containers
+#   docker compose down -v           # also wipe database volumes
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # Databases
+  # ----------------------------------------------------------
+
+  user-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d userdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  forum-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: forumdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - forum-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d forumdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------------------------
+  # Backend services
+  # ----------------------------------------------------------
+
+  user-service:
+    build:
+      context: ./backend/user-service
+    ports:
+      - "30081:8080"
+    environment:
+      DB_HOST: user-db
+      DB_PORT: 5432
+      DB_NAME: userdb
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: mhf-local-dev-jwt-secret-change-in-production
+    depends_on:
+      user-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  forum-service:
+    build:
+      context: ./backend/forum-service
+    ports:
+      - "30082:8081"
+    environment:
+      DB_HOST: forum-db
+      DB_PORT: 5432
+      DB_NAME: forumdb
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: mhf-local-dev-jwt-secret-change-in-production
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:30080
+    depends_on:
+      forum-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  # ----------------------------------------------------------
+  # Frontend (nginx serving Vite production build)
+  # ----------------------------------------------------------
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_USER_SERVICE_URL: http://localhost:30081
+        VITE_FORUM_SERVICE_URL: http://localhost:30082
+    ports:
+      - "3000:80"
+    depends_on:
+      user-service:
+        condition: service_healthy
+      forum-service:
+        condition: service_healthy
+
+volumes:
+  user-db-data:
+  forum-db-data:
