@@ -1,0 +1,375 @@
+openapi: 3.1.0
+info:
+  title: User Service API
+  description: Authentication, identity, and profile management for the Mental Health Platform
+  version: 1.0.0
+  contact:
+    name: Mental Health Platform Team
+
+servers:
+  - url: http://localhost:8081
+    description: Local development
+  - url: http://user-service:8081
+    description: Kubernetes internal
+
+paths:
+  /api/v1/auth/register:
+    post:
+      operationId: registerUser
+      summary: Register a new user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          description: Email or display name already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/login:
+    post:
+      operationId: loginUser
+      summary: Authenticate and receive JWT tokens
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '423':
+          description: Account locked (too many failed attempts)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: Refresh access token using refresh token
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid or expired refresh token
+
+  /api/v1/auth/logout:
+    post:
+      operationId: logoutUser
+      summary: Invalidate refresh token
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logged out successfully
+
+  /api/v1/users/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get current user profile
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+    patch:
+      operationId: updateCurrentUser
+      summary: Update display name or notification preferences
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '409':
+          description: Display name already taken
+    delete:
+      operationId: deleteCurrentUser
+      summary: Request account deletion
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Account deletion initiated
+
+  /api/v1/users/{anonymousId}:
+    get:
+      operationId: getPublicProfile
+      summary: Get public profile by anonymous ID
+      tags: [Profile]
+      parameters:
+        - name: anonymousId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^anon-[a-z0-9]{5}$'
+      responses:
+        '200':
+          description: Public profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProfileResponse'
+        '404':
+          description: User not found
+
+  /api/v1/admin/users/{userId}/ban:
+    post:
+      operationId: banUser
+      summary: Ban a user
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BanRequest'
+      responses:
+        '200':
+          description: User banned
+        '403':
+          description: Insufficient permissions
+
+  /api/v1/admin/users/{userId}/unban:
+    post:
+      operationId: unbanUser
+      summary: Unban a user
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User unbanned
+        '403':
+          description: Insufficient permissions
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          description: "Min 8 chars, at least 1 uppercase, 1 lowercase, 1 digit"
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_]+$'
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+            refreshToken:
+              type: string
+            expiresIn:
+              type: integer
+              description: Access token TTL in seconds
+            user:
+              $ref: '#/components/schemas/UserProfileResponse'
+
+    UserProfileResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            anonymousId:
+              type: string
+              example: "anon-x7k2m"
+            displayName:
+              type: string
+              example: "calm_wanderer"
+            roles:
+              type: array
+              items:
+                type: string
+                enum: [SEEKER, EXPERT, MODERATOR, ADMIN]
+            status:
+              type: string
+              enum: [ACTIVE, SUSPENDED, BANNED]
+            notificationPreferences:
+              $ref: '#/components/schemas/NotificationPreferences'
+            createdAt:
+              type: string
+              format: date-time
+
+    PublicProfileResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            anonymousId:
+              type: string
+            displayName:
+              type: string
+            roles:
+              type: array
+              items:
+                type: string
+            createdAt:
+              type: string
+              format: date-time
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_]+$'
+        notificationPreferences:
+          $ref: '#/components/schemas/NotificationPreferences'
+
+    NotificationPreferences:
+      type: object
+      properties:
+        emailDigest:
+          type: boolean
+          default: true
+        mentions:
+          type: boolean
+          default: true
+        replies:
+          type: boolean
+          default: true
+
+    BanRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+                  rejectedValue: {}
+            traceId:
+              type: string
