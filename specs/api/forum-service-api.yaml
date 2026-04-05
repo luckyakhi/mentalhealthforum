@@ -1,0 +1,503 @@
+openapi: 3.1.0
+info:
+  title: Forum Service API
+  description: Anonymous discussion forum for the Mental Health Platform
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8082
+    description: Local development
+  - url: http://forum-service:8082
+    description: Kubernetes internal
+
+paths:
+  /api/v1/categories:
+    get:
+      operationId: listCategories
+      summary: List all forum categories
+      tags: [Categories]
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+
+  /api/v1/categories/{slug}:
+    get:
+      operationId: getCategoryBySlug
+      summary: Get category details
+      tags: [Categories]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Category details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Category'
+        '404':
+          description: Category not found
+
+  /api/v1/threads:
+    get:
+      operationId: listThreads
+      summary: List threads with optional filters
+      tags: [Threads]
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [latest, active]
+            default: latest
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of threads
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadListResponse'
+
+    post:
+      operationId: createThread
+      summary: Create a new discussion thread
+      tags: [Threads]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateThreadRequest'
+      responses:
+        '201':
+          description: Thread created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Thread'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/threads/{threadId}:
+    get:
+      operationId: getThread
+      summary: Get thread with replies
+      tags: [Threads]
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: replyCursor
+          in: query
+          schema:
+            type: string
+        - name: replyLimit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        '200':
+          description: Thread with paginated replies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadDetailResponse'
+        '404':
+          description: Thread not found
+
+    patch:
+      operationId: updateThread
+      summary: Update thread (close)
+      tags: [Threads]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateThreadRequest'
+      responses:
+        '200':
+          description: Thread updated
+        '403':
+          description: Not authorized (not author or moderator)
+
+  /api/v1/threads/{threadId}/replies:
+    post:
+      operationId: createReply
+      summary: Reply to a thread
+      tags: [Replies]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReplyRequest'
+      responses:
+        '201':
+          description: Reply created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Reply'
+        '422':
+          description: Thread is closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/search:
+    get:
+      operationId: searchThreads
+      summary: Full-text search across threads
+      tags: [Search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 200
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResultsResponse'
+
+  /api/v1/threads/{threadId}/report:
+    post:
+      operationId: reportThread
+      summary: Report a thread
+      tags: [Reports]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        '201':
+          description: Report submitted
+
+  /api/v1/replies/{replyId}/report:
+    post:
+      operationId: reportReply
+      summary: Report a reply
+      tags: [Reports]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: replyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        '201':
+          description: Report submitted
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        threadCount:
+          type: integer
+        lastActivityAt:
+          type: string
+          format: date-time
+
+    Thread:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        authorId:
+          type: string
+          description: Anonymous author ID
+        authorDisplayName:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        categoryName:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, CLOSED, REMOVED]
+        isPinned:
+          type: boolean
+        replyCount:
+          type: integer
+        lastActivityAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    Reply:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        threadId:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        authorId:
+          type: string
+        authorDisplayName:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, REMOVED]
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateThreadRequest:
+      type: object
+      required: [categoryId, title, body]
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 5
+          maxLength: 200
+        body:
+          type: string
+          minLength: 10
+          maxLength: 10000
+
+    UpdateThreadRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [CLOSED]
+          description: Only closing is allowed via update
+
+    CreateReplyRequest:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          minLength: 10
+          maxLength: 5000
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: For nested replies (1 level max)
+
+    ReportRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          enum: [HARASSMENT, MISINFORMATION, SPAM, CRISIS_RISK, OTHER]
+        description:
+          type: string
+          maxLength: 500
+
+    ThreadListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Thread'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    ThreadDetailResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            thread:
+              $ref: '#/components/schemas/Thread'
+            replies:
+              type: array
+              items:
+                $ref: '#/components/schemas/Reply'
+            replyPagination:
+              $ref: '#/components/schemas/Pagination'
+
+    SearchResultsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              thread:
+                $ref: '#/components/schemas/Thread'
+              snippet:
+                type: string
+                description: Highlighted search match
+              relevanceScore:
+                type: number
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Pagination:
+      type: object
+      properties:
+        cursor:
+          type: string
+          nullable: true
+        hasMore:
+          type: boolean
+        totalCount:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+            traceId:
+              type: string
