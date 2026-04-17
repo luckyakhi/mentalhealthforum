@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { getCategory, Category } from '../api/categories';
 import { getThreadsByCategory, ThreadSummary } from '../api/threads';
 import { useAuth } from '../context/AuthContext';
@@ -8,7 +8,6 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 const CategoryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [category, setCategory] = useState<Category | null>(null);

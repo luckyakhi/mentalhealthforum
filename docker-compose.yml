@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+  user-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d userdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  forum-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: forumdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5433:5432"
+    volumes:
+      - forum-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d forumdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  user-service:
+    build: ./backend/user-service
+    environment:
+      DB_HOST: user-db
+      DB_PORT: "5432"
+      DB_NAME: userdb
+      DB_USER: postgres
+      DB_PASSWORD: postgres123
+      JWT_SECRET: mhf-super-secret-jwt-key-2024-for-development-only-change-in-prod
+    ports:
+      - "30081:8080"
+    depends_on:
+      user-db:
+        condition: service_healthy
+
+  forum-service:
+    build: ./backend/forum-service
+    environment:
+      DB_HOST: forum-db
+      DB_PORT: "5432"
+      DB_NAME: forumdb
+      DB_USER: postgres
+      DB_PASSWORD: postgres123
+      JWT_SECRET: mhf-super-secret-jwt-key-2024-for-development-only-change-in-prod
+    ports:
+      - "30082:8081"
+    depends_on:
+      forum-db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_USER_SERVICE_URL: http://localhost:30081
+        VITE_FORUM_SERVICE_URL: http://localhost:30082
+    ports:
+      - "30080:80"
+    depends_on:
+      - user-service
+      - forum-service
+
+volumes:
+  user-db-data:
+  forum-db-data:
